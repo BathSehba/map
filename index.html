@@ -1,5 +1,138 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workout Split</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f7f7f7; min-height: 100vh; padding-bottom: 60px; }
 
+    /* Header */
+    #header { background: #111; color: #fff; padding: 28px 24px 20px; }
+    #header-inner { max-width: 600px; margin: 0 auto; }
+    #header-eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+    #header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+    #header-sub { font-size: 13px; color: #888; margin-top: 6px; }
+    #workout-toggle { display: flex; gap: 10px; margin-top: 16px; }
+    .workout-btn {
+      padding: 8px 22px; border-radius: 6px; border: none;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      color: #fff; transition: background 0.2s;
+    }
+
+    /* Main content */
+    #main { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+
+    /* Schedule banner */
+    #schedule-banner { border-radius: 10px; padding: 14px 18px; margin-top: 20px; margin-bottom: 8px; border: 1.5px solid transparent; }
+    #schedule-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+    #schedule-weeks { display: flex; gap: 18px; }
+    .week-label { font-size: 12px; color: #666; font-weight: 500; margin-bottom: 2px; }
+    .week-order { font-size: 13px; font-weight: 700; color: #111; }
+
+    /* Day tabs */
+    #day-tabs { display: flex; gap: 8px; margin-top: 18px; margin-bottom: 14px; }
+    .day-tab {
+      flex: 1; padding: 9px 4px; border-radius: 7px;
+      font-weight: 600; font-size: 12px; cursor: pointer; transition: all 0.15s;
+    }
+
+    /* Day header */
+    #day-label { font-size: 13px; color: #888; font-weight: 500; margin-bottom: 2px; }
+    #day-title { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 16px; }
+
+    /* Exercise list */
+    #exercise-list { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Exercise card */
+    .exercise-card { background: #fff; border-radius: 10px; border-left: 4px solid; overflow: hidden; transition: box-shadow 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .exercise-card.open { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .exercise-header { padding: 14px 16px; cursor: pointer; user-select: none; }
+    .exercise-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .exercise-name { font-weight: 700; font-size: 15px; color: #111; flex: 1; }
+    .exercise-badges { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .badge-sets { border-radius: 5px; padding: 3px 8px; font-size: 12px; font-weight: 700; }
+    .badge-rest { background: #f0f0f0; color: #666; border-radius: 5px; padding: 3px 8px; font-size: 12px; font-weight: 600; }
+    .toggle-btn {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .exercise-notes { font-size: 12.5px; color: #777; line-height: 1.4; margin-top: 6px; }
+
+    /* Video section */
+    .video-section { border-top: 1px solid #f0f0f0; display: none; }
+    .exercise-card.open .video-section { display: block; }
+    .video-link { text-decoration: none; display: block; }
+    .thumb-wrap { position: relative; }
+    .thumb-wrap img { width: 100%; display: block; max-height: 200px; object-fit: cover; }
+    .play-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.25);
+    }
+    .play-btn {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #FF0000;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      font-size: 20px; color: #fff; padding-left: 4px;
+    }
+    .video-footer {
+      padding: 10px 16px; background: #fafafa;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .video-footer-label { font-size: 13px; font-weight: 600; }
+    .video-footer-hint { font-size: 12px; color: #aaa; }
+
+    /* Guidelines */
+    #guidelines { margin-top: 24px; background: #fff; border-radius: 10px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    #guidelines h3 { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 10px; }
+    .guideline { font-size: 13px; color: #555; padding-left: 14px; position: relative; margin-top: 6px; }
+    .guideline-arrow { position: absolute; left: 0; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-inner">
+    <p id="header-eyebrow">3-Day Full Body Split</p>
+    <h1>Weekly Workout Rotation</h1>
+    <p id="header-sub">Tap any exercise to see a demo</p>
+    <div id="workout-toggle">
+      <button class="workout-btn" id="btn-A" onclick="setWorkout('A')">Workout A</button>
+      <button class="workout-btn" id="btn-B" onclick="setWorkout('B')">Workout B</button>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="schedule-banner">
+    <p id="schedule-label">Alternating Weekly Schedule</p>
+    <div id="schedule-weeks"></div>
+  </div>
+
+  <div id="day-tabs"></div>
+
+  <div>
+    <p id="day-label"></p>
+    <p id="day-title"></p>
+  </div>
+
+  <div id="exercise-list"></div>
+
+  <div id="guidelines">
+    <h3>General Guidelines</h3>
+    <p class="guideline"><span class="guideline-arrow" id="g-arrow-1">›</span>Warm up 5–10 min before each session (light cardio + dynamic stretches)</p>
+    <p class="guideline"><span class="guideline-arrow" id="g-arrow-2">›</span>Increase weight when you hit the top of the rep range for 2 sets in a row</p>
+    <p class="guideline"><span class="guideline-arrow" id="g-arrow-3">›</span>Rest days: active recovery, walking, or light stretching — avoid full rest</p>
+    <p class="guideline"><span class="guideline-arrow" id="g-arrow-4">›</span>Sleep 7–9 hrs and hit your protein target (0.7–1g per lb of bodyweight)</p>
+  </div>
+</div>
+
+<script>
 const exerciseDemos = {
   "Barbell Bench Press": "rT7DgCr-3pg",
   "Overhead Press (BB or DB)": "2yjwXTZQDDI",
@@ -41,13 +174,11 @@ const exerciseDemos = {
 
 const workouts = {
   A: {
-    label: "Workout A",
     color: "#1a6ef5",
     accent: "#e8f0ff",
     days: [
       {
-        day: "Day 1 — Monday",
-        focus: "Push + Core",
+        day: "Day 1 — Monday", focus: "Push + Core",
         exercises: [
           { name: "Barbell Bench Press", sets: "4", reps: "6–8", rest: "2–3 min", notes: "Control the descent, full range of motion" },
           { name: "Overhead Press (BB or DB)", sets: "3", reps: "8–10", rest: "90 sec", notes: "Brace core, no excessive back arch" },
@@ -58,8 +189,7 @@ const workouts = {
         ],
       },
       {
-        day: "Day 2 — Wednesday",
-        focus: "Pull + Biceps",
+        day: "Day 2 — Wednesday", focus: "Pull + Biceps",
         exercises: [
           { name: "Deadlift", sets: "4", reps: "4–6", rest: "3 min", notes: "Hinge at hips, bar stays close to body" },
           { name: "Pull-Ups / Lat Pulldown", sets: "4", reps: "6–10", rest: "2 min", notes: "Full stretch at top, drive elbows down" },
@@ -70,8 +200,7 @@ const workouts = {
         ],
       },
       {
-        day: "Day 3 — Friday",
-        focus: "Legs + Abs",
+        day: "Day 3 — Friday", focus: "Legs + Abs",
         exercises: [
           { name: "Barbell Back Squat", sets: "4", reps: "6–8", rest: "2–3 min", notes: "Depth to parallel or below, knees track toes" },
           { name: "Romanian Deadlift", sets: "3", reps: "8–10", rest: "2 min", notes: "Feel the hamstring stretch, flat back" },
@@ -84,13 +213,11 @@ const workouts = {
     ],
   },
   B: {
-    label: "Workout B",
     color: "#d94f00",
     accent: "#fff0e8",
     days: [
       {
-        day: "Day 1 — Monday",
-        focus: "Pull + Core",
+        day: "Day 1 — Monday", focus: "Pull + Core",
         exercises: [
           { name: "Trap Bar Deadlift or Conv. Deadlift", sets: "4", reps: "5–6", rest: "3 min", notes: "Variation to give your back a slight change of stimulus" },
           { name: "Chest-Supported DB Row", sets: "4", reps: "8–10", rest: "90 sec", notes: "No momentum, retract scapula fully" },
@@ -101,8 +228,7 @@ const workouts = {
         ],
       },
       {
-        day: "Day 2 — Wednesday",
-        focus: "Push + Shoulders",
+        day: "Day 2 — Wednesday", focus: "Push + Shoulders",
         exercises: [
           { name: "Dumbbell Bench Press", sets: "4", reps: "8–10", rest: "2 min", notes: "Greater range of motion than barbell" },
           { name: "Seated DB Shoulder Press", sets: "3", reps: "8–10", rest: "90 sec", notes: "Don't flare elbows too wide" },
@@ -113,8 +239,7 @@ const workouts = {
         ],
       },
       {
-        day: "Day 3 — Friday",
-        focus: "Legs + Abs",
+        day: "Day 3 — Friday", focus: "Legs + Abs",
         exercises: [
           { name: "Front Squat or Goblet Squat", sets: "4", reps: "6–10", rest: "2–3 min", notes: "More quad dominant, great for depth" },
           { name: "Bulgarian Split Squat", sets: "3", reps: "8–10 each leg", rest: "90 sec", notes: "Rear foot elevated, front knee tracks toes" },
@@ -133,208 +258,125 @@ const schedule = [
   { week: "Week 2", order: ["B", "A", "B"] },
 ];
 
-function ExerciseCard({ ex, color, accent }) {
-  const [expanded, setExpanded] = useState(false);
-  const videoId = exerciseDemos[ex.name];
-  const ytUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
-  const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+let activeWorkout = "A";
+let activeDay = 0;
+let expandedCards = new Set();
 
-  return (
-    <div style={{
-      background: "#fff",
-      borderRadius: 10,
-      borderLeft: `4px solid ${color}`,
-      boxShadow: expanded ? "0 4px 16px #00000014" : "0 1px 4px #0000000a",
-      overflow: "hidden",
-      transition: "box-shadow 0.2s",
-    }}>
-      {/* Clickable header */}
-      <div
-        onClick={() => setExpanded(!expanded)}
-        style={{ padding: "14px 16px", cursor: "pointer", userSelect: "none" }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: "#111", flex: 1 }}>{ex.name}</p>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-            <span style={{ background: accent, color: color, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 700 }}>
-              {ex.sets}×{ex.reps}
-            </span>
-            <span style={{ background: "#f0f0f0", color: "#666", borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 600 }}>
-              {ex.rest}
-            </span>
-            <span style={{
-              width: 22, height: 22, borderRadius: "50%",
-              background: expanded ? color : "#f0f0f0",
-              color: expanded ? "#fff" : "#999",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 700,
-              transition: "all 0.2s",
-              flexShrink: 0,
-            }}>
-              {expanded ? "▾" : "▸"}
-            </span>
-          </div>
-        </div>
-        <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "#777", lineHeight: 1.4 }}>💡 {ex.notes}</p>
-      </div>
+function setWorkout(w) {
+  activeWorkout = w;
+  activeDay = 0;
+  expandedCards.clear();
+  render();
+}
 
-      {/* Expanded: thumbnail + YouTube link */}
-      {expanded && ytUrl && (
-        <div style={{ borderTop: "1px solid #f0f0f0" }}>
-          <a
-            href={ytUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "none", display: "block" }}
-          >
-            {/* Thumbnail with play button overlay */}
-            <div style={{ position: "relative" }}>
-              <img
-                src={thumbUrl}
-                alt={`${ex.name} demo`}
-                style={{ width: "100%", display: "block", maxHeight: 200, objectFit: "cover" }}
-              />
-              {/* Play button overlay */}
-              <div style={{
-                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(0,0,0,0.25)",
-              }}>
-                <div style={{
-                  width: 56, height: 56, borderRadius: "50%",
-                  background: "#FF0000",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
-                }}>
-                  <span style={{ color: "#fff", fontSize: 20, marginLeft: 4 }}>▶</span>
-                </div>
+function setDay(d) {
+  activeDay = d;
+  expandedCards.clear();
+  render();
+}
+
+function toggleCard(idx) {
+  if (expandedCards.has(idx)) {
+    expandedCards.delete(idx);
+  } else {
+    expandedCards.add(idx);
+  }
+  render();
+}
+
+function render() {
+  const w = workouts[activeWorkout];
+  const color = w.color;
+  const accent = w.accent;
+
+  // Workout buttons
+  ["A", "B"].forEach(k => {
+    const btn = document.getElementById("btn-" + k);
+    btn.style.background = activeWorkout === k ? workouts[k].color : "#2a2a2a";
+  });
+
+  // Schedule banner
+  const banner = document.getElementById("schedule-banner");
+  banner.style.background = accent;
+  banner.style.borderColor = color + "33";
+  document.getElementById("schedule-label").style.color = color;
+
+  const weeksEl = document.getElementById("schedule-weeks");
+  weeksEl.innerHTML = schedule.map(s => `
+    <div>
+      <p class="week-label">${s.week}</p>
+      <p class="week-order">${s.order.map(o =>
+        `<span style="color:${o === activeWorkout ? color : "#aaa"}">${o}</span>`
+      ).join('<span style="color:#ccc"> · </span>')}</p>
+    </div>
+  `).join("");
+
+  // Day tabs
+  const tabsEl = document.getElementById("day-tabs");
+  tabsEl.innerHTML = w.days.map((d, i) => `
+    <button class="day-tab" onclick="setDay(${i})" style="
+      border: 2px solid ${activeDay === i ? color : "#e0e0e0"};
+      background: ${activeDay === i ? color : "#fff"};
+      color: ${activeDay === i ? "#fff" : "#555"};
+    ">Day ${i + 1}</button>
+  `).join("");
+
+  // Day info
+  const day = w.days[activeDay];
+  document.getElementById("day-label").textContent = day.day;
+  const focusParts = day.focus.split(" ");
+  document.getElementById("day-title").innerHTML =
+    `<span style="color:${color}">${focusParts[0]}</span> ${focusParts.slice(1).join(" ")}`;
+
+  // Exercise list
+  const listEl = document.getElementById("exercise-list");
+  listEl.innerHTML = day.exercises.map((ex, i) => {
+    const open = expandedCards.has(i);
+    const videoId = exerciseDemos[ex.name];
+    const ytUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
+    const thumbUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+
+    return `
+      <div class="exercise-card ${open ? "open" : ""}" style="border-left-color: ${color};">
+        <div class="exercise-header" onclick="toggleCard(${i})">
+          <div class="exercise-top">
+            <p class="exercise-name">${ex.name}</p>
+            <div class="exercise-badges">
+              <span class="badge-sets" style="background:${accent}; color:${color}">${ex.sets}×${ex.reps}</span>
+              <span class="badge-rest">${ex.rest}</span>
+              <div class="toggle-btn" style="background:${open ? color : "#f0f0f0"}; color:${open ? "#fff" : "#999"}">
+                ${open ? "▾" : "▸"}
               </div>
             </div>
-            {/* Open on YouTube label */}
-            <div style={{
-              padding: "10px 16px",
-              background: "#fafafa",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: color }}>Watch on YouTube</span>
-              <span style={{ fontSize: 12, color: "#aaa" }}>Opens in browser →</span>
+          </div>
+          <p class="exercise-notes">💡 ${ex.notes}</p>
+        </div>
+        ${ytUrl ? `
+        <div class="video-section">
+          <a href="${ytUrl}" target="_blank" rel="noopener noreferrer" class="video-link">
+            <div class="thumb-wrap">
+              <img src="${thumbUrl}" alt="${ex.name} demo" />
+              <div class="play-overlay">
+                <div class="play-btn">▶</div>
+              </div>
+            </div>
+            <div class="video-footer">
+              <span class="video-footer-label" style="color:${color}">Watch on YouTube</span>
+              <span class="video-footer-hint">Opens in browser →</span>
             </div>
           </a>
-        </div>
-      )}
-    </div>
-  );
+        </div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  // Guideline arrows
+  ["g-arrow-1","g-arrow-2","g-arrow-3","g-arrow-4"].forEach(id => {
+    document.getElementById(id).style.color = color;
+  });
 }
 
-export default function WorkoutApp() {
-  const [activeWorkout, setActiveWorkout] = useState("A");
-  const [openDay, setOpenDay] = useState(0);
-
-  const workout = workouts[activeWorkout];
-
-  return (
-    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#f7f7f7", minHeight: "100vh", padding: "0 0 60px 0" }}>
-      {/* Header */}
-      <div style={{ background: "#111", color: "#fff", padding: "28px 24px 20px" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto" }}>
-          <p style={{ margin: 0, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#888", marginBottom: 6 }}>3-Day Full Body Split</p>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, letterSpacing: "-0.5px" }}>Weekly Workout Rotation</h1>
-          <p style={{ margin: "6px 0 0", fontSize: 13, color: "#888" }}>Tap any exercise to see a demo</p>
-          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-            {["A", "B"].map((w) => (
-              <button
-                key={w}
-                onClick={() => { setActiveWorkout(w); setOpenDay(0); }}
-                style={{
-                  padding: "8px 22px", borderRadius: 6, border: "none",
-                  fontWeight: 600, fontSize: 14, cursor: "pointer",
-                  background: activeWorkout === w ? workouts[w].color : "#2a2a2a",
-                  color: "#fff", transition: "background 0.2s",
-                }}
-              >
-                Workout {w}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "0 16px" }}>
-        {/* Schedule Banner */}
-        <div style={{ background: workout.accent, border: `1.5px solid ${workout.color}22`, borderRadius: 10, padding: "14px 18px", marginTop: 20, marginBottom: 8 }}>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: workout.color, marginBottom: 6 }}>Alternating Weekly Schedule</p>
-          <div style={{ display: "flex", gap: 18 }}>
-            {schedule.map((s) => (
-              <div key={s.week}>
-                <p style={{ margin: "0 0 2px", fontSize: 12, color: "#666", fontWeight: 500 }}>{s.week}</p>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111" }}>
-                  {s.order.map((o, i) => (
-                    <span key={i}>
-                      <span style={{ color: o === activeWorkout ? workout.color : "#aaa" }}>{o}</span>
-                      {i < 2 && <span style={{ color: "#ccc" }}> · </span>}
-                    </span>
-                  ))}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Day Tabs */}
-        <div style={{ display: "flex", gap: 8, marginTop: 18, marginBottom: 14 }}>
-          {workout.days.map((d, i) => (
-            <button
-              key={i}
-              onClick={() => setOpenDay(i)}
-              style={{
-                flex: 1, padding: "9px 4px", borderRadius: 7,
-                border: openDay === i ? `2px solid ${workout.color}` : "2px solid #e0e0e0",
-                background: openDay === i ? workout.color : "#fff",
-                color: openDay === i ? "#fff" : "#555",
-                fontWeight: 600, fontSize: 12, cursor: "pointer", transition: "all 0.15s",
-              }}
-            >
-              Day {i + 1}
-            </button>
-          ))}
-        </div>
-
-        {/* Active Day */}
-        {workout.days.map((day, i) =>
-          openDay === i ? (
-            <div key={i}>
-              <div style={{ marginBottom: 16 }}>
-                <p style={{ margin: 0, fontSize: 13, color: "#888", fontWeight: 500 }}>{day.day}</p>
-                <h2 style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 700, color: "#111" }}>
-                  <span style={{ color: workout.color }}>{day.focus.split(" ")[0]}</span>{" "}
-                  {day.focus.split(" ").slice(1).join(" ")}
-                </h2>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {day.exercises.map((ex, j) => (
-                  <ExerciseCard key={j} ex={ex} color={workout.color} accent={workout.accent} />
-                ))}
-              </div>
-            </div>
-          ) : null
-        )}
-
-        {/* Footer tips */}
-        <div style={{ marginTop: 24, background: "#fff", borderRadius: 10, padding: "16px 18px", boxShadow: "0 1px 4px #0000000a" }}>
-          <p style={{ margin: "0 0 10px", fontWeight: 700, fontSize: 14, color: "#111" }}>General Guidelines</p>
-          {[
-            "Warm up 5–10 min before each session (light cardio + dynamic stretches)",
-            "Increase weight when you hit the top of the rep range for 2 sets in a row",
-            "Rest days: active recovery, walking, or light stretching — avoid full rest",
-            "Sleep 7–9 hrs and hit your protein target (0.7–1g per lb of bodyweight)",
-          ].map((tip, i) => (
-            <p key={i} style={{ margin: "6px 0 0", fontSize: 13, color: "#555", paddingLeft: 14, position: "relative" }}>
-              <span style={{ position: "absolute", left: 0, color: workout.color }}>›</span>
-              {tip}
-            </p>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+render();
+</script>
+</body>
+</html>
